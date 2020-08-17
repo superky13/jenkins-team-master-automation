@@ -1,0 +1,6 @@
+<com.dabsquared.gitlabjenkins.connection.GitLabApiTokenImpl plugin="gitlab-plugin@1.5.11">
+  <scope>GLOBAL</scope>
+  <id>jenkins-github</id>
+  <description></description>
+  <apiToken>{{ jenkins_api_token }}</apiToken>
+</com.dabsquared.gitlabjenkins.connection.GitLabApiTokenImpl>

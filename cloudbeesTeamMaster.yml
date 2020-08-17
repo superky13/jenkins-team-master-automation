@@ -1,0 +1,216 @@
+---
+- name: cloudbees jenkins team master automation 
+  hosts: localhost
+  become: true
+  become_user: root
+  vars:
+  - cloudbeesTarget: 'ste'
+  - jenkins_user: 'cloudbees'
+  - env: 'ecicd'
+  - cloudbees_domain: 'cloudbees.apps.example.com'
+  - cjoc_url: 'https://cloudbees-core.cloudbees.apps.example.com/cjoc/'
+  - ocp_user: 'kritchie'
+  - ocp_password: ""
+  - artifactory_user: 'kritchie'
+  - artifactory_password: ""
+  - github_user: 'kritchie'
+  - github_pw: ""
+  - artifactory_repo_name: 'cloudbees-plugins'
+  - jenkins_admin_password: 'cloudbees'
+  - jenkins_user_pw_template: 'jenkins-user-pw'
+  - team_master_template: 'team.json'
+  - jenkins_templates: ['team.json', 'jenkins-user-pw', 'jenkins-gitlab.xml', 'org.jenkinsci.plugins.workflow.libs.GlobalLibraries.xml', 'jenkins-cli-team-master.sh', 'jenkins-cli-cjoc.sh']
+  # uncomment when sonarqube is back up ##- jenkins_templates: ['team.json', 'jenkins-user-pw', 'jenkins-gitlab.xml', 'org.jenkinsci.plugins.workflow.libs.GlobalLibraries.xml', 'jenkins-cli-team-master.sh', 'jenkins-cli-cjoc.sh', 'hudson.plugins.sonar.SonarGlobalConfiguration.xml']
+  - jenkins_files: ['jenkins-cli.jar']
+  - working_dir: '/tmp'
+  - main_cloudbees_namespace: 'cloudbees'
+  - artifactory_plugin_dir: '{{ working_dir }}/plugins'
+  - artifactory_plugin_name: 'master-plugins.tar.gz'
+  - artifactory_plugin_url: 'https://artifactory.apps.example.com/artifactory/cloudbees-plugins/{{ artifactory_plugin_name }}'
+  - sonarqube_user: 'admin'
+  - sonarqube_pw: ''
+  - sonarqube_url: 'https://sonarqube-sonarqube.apps.example.com'
+  - github_url: 'https://git.example.com'
+  tasks:
+  - name: create the github personal access token to be used by the new team master
+    shell: "curl -sk -X POST -u {{ github_user }}:'{{ github_pw }}' -H 'Content-Type: application/json' -d '{\"scopes\": [\"repo\"],\"note\": \"{{ cloudbeesTarget }}\"}' {{ github_url }}/api/v3/authorizations | grep -m 1 token | awk '{print $2}' | cut -d'\"' -f2"
+    register: githubapiresp
+
+  - name: set fact for github personal access token variable value
+    set_fact:
+      jenkins_api_token: "{{ githubapiresp.stdout }}"
+
+#  - name: create sonarqube token
+#    shell: "curl -sk -X POST -u {{ sonarqube_user }}:{{ sonarqube_pw }} {{ sonarqube_url }}/api/user_tokens/generate?name={{ cloudbeesTarget }}-token | cut -d'\"' -f12" 
+#    register: sonarapiresp
+
+#  - name: set fact for sonarqube user token variable value
+#    set_fact:
+#      sonar_api_token: "{{ sonarapiresp.stdout }}"
+
+  - name: oc login to ocp in {{ env }}
+    shell: "oc login -u {{ ocp_user }} -p '{{ ocp_password }}'"
+
+  - name: copy jenkins templates to {{ working_dir }}
+    template: 
+      src: "templates/{{ item }}"
+      dest: "{{ working_dir }}/"
+    with_items:
+    - "{{ jenkins_templates }}"
+
+  - name: copy the jenkins jar to {{ working_dir }}
+    copy: 
+      src: "files/{{ item }}"
+      dest: "{{ working_dir }}/"
+    with_items: 
+    - "{{ jenkins_files }}"
+
+  - name: ensure that {{ jenkins_templates[4] }} and {{ jenkins_templates[5] }} are executable
+    file:
+      path: "{{ working_dir }}/{{ item }}"
+      mode: '0755'
+    with_items:
+    - "{{ jenkins_templates[4] }}"
+    - "{{ jenkins_templates[5] }}"
+
+  - name: create the team master {{ cloudbeesTarget }}
+    shell: "./{{ jenkins_templates[5] }} teams {{ cloudbeesTarget }} --put < {{ team_master_template }}"
+    args:
+      chdir: "{{ working_dir }}/"
+
+  - name: determine cloudbees team master pod name on openshift infra
+    shell: oc project cloudbees && oc get pods | awk '{print $1}' | grep {{ cloudbeesTarget }} 
+    register: cloudbeesMasterPodName
+
+  - name: determine {{ cloudbeesTarget }} hostname
+    shell: oc project cloudbees && oc get routes | grep {{ cloudbeesTarget }} | awk '{print $2}'
+    register: cloudbeesMasterHostname
+    
+  - name: determine {{ cloudbeesTarget }} route
+    shell: oc project cloudbees && oc get routes | grep {{ cloudbeesTarget }} | awk '{print $2 $3}'
+    register: cloudbeesMasterRoute
+
+  - name: wait for team master {{ cloudbeesTarget }} to become available
+    uri:
+      user: "{{ jenkins_user }}"
+      password: "{{ jenkins_admin_password }}"
+      validate_certs: no
+      force_basic_auth: yes
+      url: "https://{{ cloudbeesMasterRoute.stdout_lines[1] }}"
+      status_code: 200
+    register: result
+    until: result.status == 200
+    retries: 80
+    delay: 1
+
+#  - name: create the webhook for {{ cloudbeesTarget }} in sonarqube
+#    shell: "curl -sk -X POST -u {{ sonarqube_user }}:{{ sonarqube_pw }} {{ sonarqube_url }}/api/webhooks/create -d 'name={{ cloudbeesTarget }}&url=https://teams-{{ cloudbeesTarget }}.{{ cloudbees_domain }}/teams-{{ cloudbeesTarget }}'"
+
+  - name: create {{ artifactory_plugin_dir }} on {{ working_dir }}
+    file:
+      path: "{{ artifactory_plugin_dir }}"
+      state: directory
+      mode: '0755'
+  
+  - name: pull the cloudbees-plugins from artifactory
+    shell: "curl -sk -u {{ artifactory_user }}:{{ artifactory_password }} {{ artifactory_plugin_url }} -o {{ artifactory_plugin_name }}"
+    args:
+      chdir: "{{ artifactory_plugin_dir }}"
+
+  - name: unpack the cloudbees-plugin zip 
+    unarchive:
+      src: "{{ artifactory_plugin_dir }}/{{ artifactory_plugin_name }}"
+      dest: "{{ artifactory_plugin_dir }}"
+      remote_src: yes
+
+  - name: oc cp the jpi artifacts into the new team master {{ cloudbeesTarget }}
+    shell: "oc project cloudbees && oc cp {{ artifactory_plugin_dir }}/plugins/ {{ cloudbeesMasterPodName.stdout_lines[1] }}:/var/jenkins_home/"
+
+  - name: get Jenkins crumb
+    uri:
+      user: "{{ jenkins_user }}"
+      password: "{{ jenkins_admin_password }}"
+      force_basic_auth: yes
+      validate_certs: no
+      url: "https://{{ cloudbeesMasterRoute.stdout_lines[1] }}/crumbIssuer/api/json"
+      return_content: yes
+      status_code: 200, 404
+    register: jenkins_crumb
+    until: jenkins_crumb.status == 200 and jenkins_crumb.content.find('Please wait while Jenkins is getting ready to work') == -1
+    retries: 10
+    delay: 5
+
+  - name: set crumb token
+    set_fact:
+      jenkins_crumb_token: "{{ jenkins_crumb.json.crumbRequestField }}={{ jenkins_crumb.json.crumb }}"
+
+  - name: restart Jenkins to activate new plugins
+    uri:
+      user: "{{ jenkins_user }}"
+      password: "{{ jenkins_admin_password }}"
+      validate_certs: no
+      headers:
+        Jenkins-Crumb: "{{ jenkins_crumb_token.split('=')[1] }}"
+      force_basic_auth: yes
+      status_code: 302
+      url: "https://{{ cloudbeesMasterRoute.stdout_lines[1] }}/restart"
+      method: POST
+ #  when: jenkins_restart_required.json.restartRequiredForCompletion|bool
+
+  - name: wait for team master {{ cloudbeesTarget }} to become available
+    uri:
+      user: "{{ jenkins_user }}"
+      password: "{{ jenkins_admin_password }}"
+      validate_certs: no
+      force_basic_auth: yes
+      url: "https://{{ cloudbeesMasterRoute.stdout_lines[1] }}"
+      status_code: 200
+    register: result
+    until: result.status == 200
+    retries: 80
+    delay: 1
+  
+  - name: create the jenkins-gitlab credential on {{ cloudbeesTarget }} from {{ jenkins_templates[2] }}
+    shell: "./{{ jenkins_templates[4] }} create-credentials-by-xml system::system::jenkins _ < {{ jenkins_templates[2] }}"
+    args:
+      chdir: "{{ working_dir }}/"
+    register: jenkinsgitlabcred
+    failed_when: "'ERROR' in jenkinsgitlabcred.stdout"
+
+  - name: push the new {{ jenkins_templates[3] }} to {{ cloudbeesTarget }}
+    shell: "oc cp {{ working_dir }}/{{ jenkins_templates[3] }} {{ cloudbeesMasterPodName.stdout_lines[1] }}:/var/jenkins_home/"
+    #shell: "oc rsync /tmp/ {{ cloudbeesMasterPodName.stdout_lines[1] }}:/var/jenkins_home/ --exclude=* --include='org.jenkinsci.plugins.workflow.libs.GlobalLibraries.xml' --no-perms"
+
+  - name: restart Jenkins to activate new plugins
+    uri:
+      user: "{{ jenkins_user }}"
+      password: "{{ jenkins_admin_password }}"
+      validate_certs: no
+      headers:
+        Jenkins-Crumb: "{{ jenkins_crumb_token.split('=')[1] }}"
+      force_basic_auth: yes
+      status_code: 302
+      url: "https://{{ cloudbeesMasterRoute.stdout_lines[1] }}/restart"
+      method: POST
+ #  when: jenkins_restart_required.json.restartRequiredForCompletion|bool
+
+  - name: wait for team master {{ cloudbeesTarget }} to become available
+    uri:
+      user: "{{ jenkins_user }}"
+      password: "{{ jenkins_admin_password }}"
+      validate_certs: no
+      force_basic_auth: yes
+      url: "https://{{ cloudbeesMasterRoute.stdout_lines[1] }}"
+      status_code: 200
+    register: result
+    until: result.status == 200
+    retries: 80
+    delay: 1
+
+  - name: cleanup jenkins-* files after use
+    file:
+      state: absent
+      path: "{{ working_dir }}/{{ item }}"
+    with_items:
+    - "{{ jenkins_templates }}"
+    - "{{ jenkins_files }}"

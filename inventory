@@ -1,0 +1,2 @@
+[nodes]
+localhost ansible_user=ansible-root ansible_ssh_private_key_file=/home/ansible-root/.ssh/id_rsa

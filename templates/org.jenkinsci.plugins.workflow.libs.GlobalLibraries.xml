@@ -1,0 +1,99 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<org.jenkinsci.plugins.workflow.libs.GlobalLibraries plugin="workflow-cps-global-lib@2.13">
+  <libraries>
+    <org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+      <name>jenkins-pipeline-java-library</name>
+      <retriever class="org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever">
+        <scm class="jenkins.plugins.git.GitSCMSource" plugin="git@3.9.3">
+          <id>d3a810a0-9e89-47c0-9cc4-41a956a422c1</id>
+          <remote>git@git.example.com:example/jenkins-pipeline-java-library.git</remote>
+          <credentialsId>github-credentials</credentialsId>
+          <traits>
+            <jenkins.plugins.git.traits.BranchDiscoveryTrait/>
+          </traits>
+        </scm>
+      </retriever>
+      <implicit>false</implicit>
+      <allowVersionOverride>true</allowVersionOverride>
+      <includeInChangesets>true</includeInChangesets>
+    </org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+    <org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+      <name>redhat-cop-pipeline-library</name>
+      <retriever class="org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever">
+        <scm class="jenkins.plugins.git.GitSCMSource" plugin="git@3.9.3">
+          <id>2e3bbd12-2a67-4c45-9335-04db2f888f57</id>
+          <remote>git@git.example.com:example/redhat-cop-pipeline-library.git</remote>
+          <credentialsId>github-credentials</credentialsId>
+          <traits>
+            <jenkins.plugins.git.traits.BranchDiscoveryTrait/>
+          </traits>
+        </scm>
+      </retriever>
+      <implicit>false</implicit>
+      <allowVersionOverride>true</allowVersionOverride>
+      <includeInChangesets>true</includeInChangesets>
+    </org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+    <org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+      <name>jenkins-pipeline-utils</name>
+      <retriever class="org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever">
+        <scm class="jenkins.plugins.git.GitSCMSource" plugin="git@3.9.3">
+          <id>2e3bbd12-2a67-4c45-9335-04db2f888f57</id>
+          <remote>git@git.example.com:example/jenkins-pipeline-utils.git</remote>
+          <credentialsId>github-credentials</credentialsId>
+          <traits>
+            <jenkins.plugins.git.traits.BranchDiscoveryTrait/>
+          </traits>
+        </scm>
+      </retriever>
+      <implicit>false</implicit>
+      <allowVersionOverride>true</allowVersionOverride>
+      <includeInChangesets>true</includeInChangesets>
+    </org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+    <org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+      <name>jenkins-pipeline-java</name>
+      <retriever class="org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever">
+        <scm class="jenkins.plugins.git.GitSCMSource" plugin="git@3.9.3">
+          <id>2e3bbd12-2a67-4c45-9335-04db2f888f57</id>
+          <remote>git@git.example.com:examplejenkins-pipeline-java.git</remote>
+          <credentialsId>github-credentials</credentialsId>
+          <traits>
+            <jenkins.plugins.git.traits.BranchDiscoveryTrait/>
+          </traits>
+        </scm>
+      </retriever>
+      <implicit>false</implicit>
+      <allowVersionOverride>true</allowVersionOverride>
+      <includeInChangesets>true</includeInChangesets>
+    </org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+    <org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+      <name>jenkins-pipeline-database</name>
+      <retriever class="org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever">
+        <scm class="jenkins.plugins.git.GitSCMSource" plugin="git@3.9.3">
+          <id>2e3bbd12-2a67-4c45-9335-04db2f888f57</id>
+          <remote>git@git.example.com:example/jenkins-pipeline-database.git</remote>
+          <credentialsId>github-credentials</credentialsId>
+          <traits>
+            <jenkins.plugins.git.traits.BranchDiscoveryTrait/>
+          </traits>
+        </scm>
+      </retriever>
+      <implicit>false</implicit>
+      <allowVersionOverride>true</allowVersionOverride>
+      <includeInChangesets>true</includeInChangesets>
+      <org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+      <name>jenkins-pipeline-database</name>
+      <retriever class="org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever">
+        <scm class="jenkins.plugins.git.GitSCMSource" plugin="git@3.9.3">
+          <id>2e3bbd12-2a67-4c45-9335-04db2f888f57</id>
+          <remote>git@git.example.com:example/jenkins-pipeline-python.git</remote>
+          <credentialsId>github-credentials</credentialsId>
+          <traits>
+            <jenkins.plugins.git.traits.BranchDiscoveryTrait/>
+          </traits>
+        </scm>
+      </retriever>
+      <implicit>false</implicit>
+      <allowVersionOverride>true</allowVersionOverride>
+      <includeInChangesets>true</includeInChangesets>
+    </org.jenkinsci.plugins.workflow.libs.LibraryConfiguration>
+  </libraries>

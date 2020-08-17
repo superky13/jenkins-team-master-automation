@@ -1,0 +1,26 @@
+{
+    "data": {
+        "displayName": "{{ cloudbeesTarget }}",
+        "icon": {
+            "color": "#7ac2d6",
+            "name": "code"
+        },
+        "members": [
+            {
+                "id": "kritchie",
+                "roles": [
+                    "TEAM_ADMIN"
+                ]
+            },
+            {
+                "id": "teammember",
+                "roles": [
+                    "TEAM_MEMBER"
+                ]
+            }
+        ],
+        "provisioningRecipe": "basic",
+        "name": "{{ cloudbeesTarget }}"
+    },
+    "version": "1"
+}
