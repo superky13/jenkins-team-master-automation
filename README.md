@@ -6,8 +6,8 @@ Use this code to deploy a new team master:
 
 2) The following variables need to be defined/adjusted prior to running the code (in cloudbeesTeamMaster.yml)
 vars:
-  - cloudbeesTarget: human-review ## <-- this is the name of your new team master
-  - env: 'ecicd'
+  - cloudbeesTarget: example-team-master ## <-- this is the name of your new team master
+  - env: 'PROD'
   - cloudbees_domain: 'cloudbees.apps.example.com'
   - cjoc_url: 'https://cloudbees-core.cloudbees.apps.example.com/cjoc/'
   - ocp_user: ''
